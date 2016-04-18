@@ -1,0 +1,77 @@
+Code for slave-side ISO7816-4 interface  (SIMtrace <-> phone)
+This is work in progress - Tom Schouten <tom@getbeep.com>
+2013-10-30
+
+src/                 # GPL additions
+
+errno.h
+iso7816_port.h       # generaic uart abstraction
+iso7816_slave.h|c    # slave (card) side protocol
+iso7816_master.c     # master (reader) side protocol
+iso7816_at91.c       # AT91 uart code (implements iso7816_port.h)
+usb_control_at91.h|c # AT91 USB VENDOR control request handling
+
+mim.py               # simple MiTM setup: connect slave side to card reader
+*.py                 # support code for mim.py
+
+iso7816-slave-cdc-project/main.c  # firmware entry point
+
+
+Basic ideas:
+- Keep slave side simple so it can be shared with card OS
+- Implement slave side as non-blocking state machine to avoid dependency on RTOS
+- Export slave interface over USB VENDOR control requests
+
+
+
+Issues
+------
+
+- The USB VENDOR interface is currently bolted on top of a dummy
+  virtual CDC serial port application.  The CDC serial port
+  functionality is not used.
+
+  I was not able to merge this code with the CCID driver.
+
+  That said, the APDU forwarder functionality does work for me using a
+  separate off-the-shelf USB card reader.  Entry points:
+  src/mim.py
+  iso7816-slave-cdc-project/main.c
+
+
+- I was not able to get the CCID driver code to work properly.  The
+  apdu_phone branch contains some fixes wrt Harald's master branch,
+  but I am not able to get a correct ATR from the card in the reader
+  slot.
+
+
+
+
+Fixing it up 
+-------------
+
+It doesn't look like I'm going to have time to finish this up.
+
+I'm happy to assist anyone that wants to tackle it.  It is hard to
+estimate at this point how much time it would take.
+
+The problem is one of design: the structure of the Atmel CCID driver
+is not suited to be extended to support the asynchronous iso7816 slave
+driver:
+
+- CCID driver uses interrupts for USB, and HW blocking serial I/O
+
+- iso7816 code uses non-blocking / polled mode.
+
+If I were to fix this, I would switch everything to the same
+mechanism:
+a) interrupt/DMA for everything, or
+b) non-blocking polling state machines for everything or
+c) use an RTOS with support for AT91 USB / serial
+
+It might be possible to hack it in such a way that a big change is not
+necessary.  I tried this in usb-device-ccid-project/main.c with
+corresponding modifications to cciddriver.c, but I don't see clearly
+why it doesn't work.  It might be as simple as a serial port
+initialization bug.
+
