@@ -1,8 +1,21 @@
+SIM forwarder
+
+Implements a CDC driver (USB Communication Device Class) to
+communicate with a mobile phone connected to the SIMtrace hardware usingFlex-PCB cable.
+The communication between the SIMtrace and the mobile phone takes place on the
+USART/ISO7816 interface. Data from the USART interface are forwarded via USB to
+the PC (both ways). A program called simLAB (link) can handle such communication
+on the PC side and allows modification of APDU exchanged between a mobile phone
+(Mobile Equipment) and a SIM card. The SIM card should be connected using any
+external Smart Card Reader (should NOT be inserted into the SIMtrace slot).
+The simLAB application is responsible for routing the communication between
+the card reader and SIMtrace hardware (mobile phone).
+
+Notes from AT91 work project, some of them are outdated or not valid anymore.
+
 Code for slave-side ISO7816-4 interface  (SIMtrace <-> phone)
 This is work in progress - Tom Schouten <tom@getbeep.com>
 2013-10-30
-
-src/                 # GPL additions
 
 errno.h
 iso7816_port.h       # generaic uart abstraction
@@ -10,19 +23,12 @@ iso7816_slave.h|c    # slave (card) side protocol
 iso7816_master.c     # master (reader) side protocol
 iso7816_at91.c       # AT91 uart code (implements iso7816_port.h)
 usb_control_at91.h|c # AT91 USB VENDOR control request handling
-
-mim.py               # simple MiTM setup: connect slave side to card reader
-*.py                 # support code for mim.py
-
 iso7816-slave-cdc-project/main.c  # firmware entry point
-
 
 Basic ideas:
 - Keep slave side simple so it can be shared with card OS
 - Implement slave side as non-blocking state machine to avoid dependency on RTOS
 - Export slave interface over USB VENDOR control requests
-
-
 
 Issues
 ------
@@ -43,9 +49,6 @@ Issues
   apdu_phone branch contains some fixes wrt Harald's master branch,
   but I am not able to get a correct ATR from the card in the reader
   slot.
-
-
-
 
 Fixing it up 
 -------------
